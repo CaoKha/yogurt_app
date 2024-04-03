@@ -1,6 +1,7 @@
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use serde::Serialize;
+use tracing::debug;
 
 
 #[derive(Clone, Debug, Serialize, strum_macros::AsRefStr)]
@@ -29,7 +30,7 @@ impl std::error::Error for Error {}
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        println!("->> {:<12} - {self:?}", "INTO_RES");
+        debug!("{:<12} - {self:?}", "INTO_RES");
 
         // Create a placeholder Axum reponse.
         let mut response = StatusCode::INTERNAL_SERVER_ERROR.into_response();
@@ -42,6 +43,7 @@ impl IntoResponse for Error {
 }
 
 impl Error {
+    /// convert server error to client error then sending it to the client
     pub fn client_status_and_error(&self) -> (StatusCode, ClientError) {
         #[allow(unreachable_patterns)]
         match self {

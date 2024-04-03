@@ -1,4 +1,5 @@
 use axum::{extract::State, routing::post, Json, Router};
+use tracing::debug;
 
 use crate::backend::{
     ctx::Ctx,
@@ -25,7 +26,7 @@ async fn list_tickets(
     State(mc): State<ModelController>,
     ctx: Ctx
 ) -> Result<Json<Vec<Ticket>>, Error> {
-    println!("->> {:<12} - list_tickets", "HANDLER");
+    debug!("{:<12} - list_tickets", "HANDLER");
 
     let tickets = mc.list_tickets(ctx).await?;
 

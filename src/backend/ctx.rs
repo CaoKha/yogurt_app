@@ -1,9 +1,10 @@
 use axum::{async_trait, extract::FromRequestParts};
 use http::request::Parts;
+use tracing::debug;
 use crate::backend::error::Error;
 
 #[derive(Clone, Debug)]
-/// authenticate person who call the api
+/// Context -- authenticate person who call the api
 pub struct Ctx {
 	user_id: u64,
 }
@@ -27,12 +28,12 @@ impl Ctx {
 impl<S: Send + Sync> FromRequestParts<S> for Ctx {
 	type Rejection = Error;
 
-	async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Error> {
-		println!("->> {:<12} - Ctx", "EXTRACTOR");
+	async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+		debug!("{:<12} - Ctx", "EXTRACTOR");
 
 		parts
 			.extensions
-			.get::<Result<Ctx, Error>>()
+			.get::<Result<Ctx,Self::Rejection>>()
 			.ok_or(Error::AuthFailCtxNotInRequestExt)?
 			.clone()
 	}
