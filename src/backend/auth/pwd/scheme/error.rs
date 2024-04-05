@@ -1,13 +1,14 @@
-use derive_more::From;
-use crate::backend::model;
+use serde::Serialize;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, From)]
+#[derive(Debug, Serialize)]
 pub enum Error {
-	// -- Modules
-	#[from]
-	Model(model::Error),
+	Key,
+	Salt,
+	Hash,
+	PwdValidate,
+	SchemeNotFound(String),
 }
 
 // region:    --- Error Boilerplate

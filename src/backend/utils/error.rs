@@ -1,13 +1,12 @@
-use derive_more::From;
-use crate::backend::model;
-
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, From)]
+#[derive(Debug)]
 pub enum Error {
-	// -- Modules
-	#[from]
-	Model(model::Error),
+	// -- Time
+	DateFailParse(String),
+
+	// -- Base64
+	FailToB64uDecode,
 }
 
 // region:    --- Error Boilerplate

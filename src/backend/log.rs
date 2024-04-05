@@ -1,39 +1,50 @@
-use super::ctx::Ctx;
-use super::error::ClientError;
-use super::error::Error;
+use crate::backend::web::middleware::mw_req_stamp::ReqStamp;
+use crate::backend::web::routes::routes_rpc::RpcInfo;
+use crate::backend::web::{self, ClientError};
+use crate::backend::error::Result;
 use axum::http::{Method, Uri};
+use crate::backend::ctx::Ctx;
+use crate::backend::utils::time::{format_time, now_utc};
 use serde::Serialize;
 use serde_json::{json, Value};
 use serde_with::skip_serializing_none;
+use time::Duration;
 use tracing::debug;
-use std::time::{SystemTime, UNIX_EPOCH};
-use uuid::Uuid;
 
 pub async fn log_request(
-	uuid: Uuid,
-	req_method: Method,
+	http_method: Method,
 	uri: Uri,
+	req_stamp: ReqStamp,
+	rpc_info: Option<&RpcInfo>,
 	ctx: Option<Ctx>,
-	service_error: Option<&Error>,
+	web_error: Option<&web::Error>,
 	client_error: Option<ClientError>,
-) -> Result<(), Error> {
-	let timestamp = SystemTime::now()
-		.duration_since(UNIX_EPOCH)
-		.unwrap()
-		.as_millis();
-
-	let error_type = service_error.map(|se| se.to_string());
-	let error_data = serde_json::to_value(service_error)
+) -> Result<()> {
+	// -- Prep error
+	let error_type = web_error.map(|se| se.as_ref().to_string());
+	let error_data = serde_json::to_value(web_error)
 		.ok()
 		.and_then(|mut v| v.get_mut("data").map(|v| v.take()));
+
+	// -- Prep Req Information
+	let ReqStamp { uuid, time_in } = req_stamp;
+	let now = now_utc();
+	let duration: Duration = now - time_in;
+	// duration_ms in milliseconds with microseconds precision.
+	let duration_ms = (duration.as_seconds_f64() * 1_000_000.).floor() / 1_000.;
 
 	// Create the RequestLogLine
 	let log_line = RequestLogLine {
 		uuid: uuid.to_string(),
-		timestamp: timestamp.to_string(),
+		timestamp: format_time(now), // LogLine timestamp ("time_out")
+		time_in: format_time(time_in),
+		duration_ms,
 
-		req_path: uri.to_string(),
-		req_method: req_method.to_string(),
+		http_path: uri.to_string(),
+		http_method: http_method.to_string(),
+
+		rpc_id: rpc_info.and_then(|rpc| rpc.id.as_ref().map(|id| id.to_string())),
+		rpc_method: rpc_info.map(|rpc| rpc.method.to_string()),
 
 		user_id: ctx.map(|c| c.user_id()),
 
@@ -43,9 +54,9 @@ pub async fn log_request(
 		error_data,
 	};
 
-	debug!("REQUEST LOG LINE: \n{}", json!(log_line));
+	debug!("REQUEST LOG LINE:\n{}", json!(log_line));
 
-	// TODO - Send to cloud-watch.
+	// TODO - Send to cloud-watch and/or have a `pack_and_send` logic as well (newline json and/or parquet file)
 
 	Ok(())
 }
@@ -54,14 +65,20 @@ pub async fn log_request(
 #[derive(Serialize)]
 struct RequestLogLine {
 	uuid: String,      // uuid string formatted
-	timestamp: String, // (should be iso8601)
+	timestamp: String, // (Rfc3339)
+	time_in: String,   // (Rfc3339)
+	duration_ms: f64,
 
 	// -- User and context attributes.
-	user_id: Option<u64>,
+	user_id: Option<i64>,
 
 	// -- http request attributes.
-	req_path: String,
-	req_method: String,
+	http_path: String,
+	http_method: String,
+
+	// -- rpc info.
+	rpc_id: Option<String>,
+	rpc_method: Option<String>,
 
 	// -- Errors attributes.
 	client_error_type: Option<String>,

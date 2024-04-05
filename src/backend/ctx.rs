@@ -1,42 +1,56 @@
-use axum::{async_trait, extract::FromRequestParts};
-use http::request::Parts;
-use tracing::debug;
-use crate::backend::error::Error;
+// region:    --- Modules
 
+mod error;
+
+pub use self::error::{Error, Result};
+
+// endregion: --- Modules
+
+#[cfg_attr(feature = "ssr", derive(rpc_router::RpcResource))]
 #[derive(Clone, Debug)]
-/// Context -- authenticate person who call the api
 pub struct Ctx {
-	user_id: u64,
+	user_id: i64,
+
+	/// Note: For the future ACS (Access Control System)
+	conv_id: Option<i64>,
 }
 
-// Constructor.
+// Constructors.
 impl Ctx {
-	pub fn new(user_id: u64) -> Self {
-		Self { user_id }
+	pub fn root_ctx() -> Self {
+		Ctx {
+			user_id: 0,
+			conv_id: None,
+		}
+	}
+
+	pub fn new(user_id: i64) -> Result<Self> {
+		if user_id == 0 {
+			Err(Error::CtxCannotNewRootCtx)
+		} else {
+			Ok(Self {
+				user_id,
+				conv_id: None,
+			})
+		}
+	}
+
+	/// Note: For the future ACS (Access Control System)
+	pub fn add_conv_id(&self, conv_id: i64) -> Ctx {
+		let mut ctx = self.clone();
+		ctx.conv_id = Some(conv_id);
+		ctx
 	}
 }
 
 // Property Accessors.
 impl Ctx {
-	pub fn user_id(&self) -> u64 {
+	pub fn user_id(&self) -> i64 {
 		self.user_id
 	}
-}
 
-// region:    --- Ctx Extractor
-#[async_trait]
-impl<S: Send + Sync> FromRequestParts<S> for Ctx {
-	type Rejection = Error;
-
-	async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-		debug!("{:<12} - Ctx", "EXTRACTOR");
-
-		parts
-			.extensions
-			.get::<Result<Ctx,Self::Rejection>>()
-			.ok_or(Error::AuthFailCtxNotInRequestExt)?
-			.clone()
+	//. /// Note: For the future ACS (Access Control System)
+	pub fn conv_id(&self) -> Option<i64> {
+		self.conv_id
 	}
 }
-
-// endregion: --- Ctx Extractor

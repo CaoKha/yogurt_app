@@ -1,72 +1,69 @@
-use serde::{Serialize, Deserialize};
-use std::sync::{Arc, Mutex};
+//! Model Layer
+//!
+//! Design:
+//!
+//! - The Model layer normalizes the application's data type
+//!   structures and access.
+//! - All application code data access must go through the Model layer.
+//! - The `ModelManager` holds the internal states/resources
+//!   needed by ModelControllers to access data.
+//!   (e.g., db_pool, S3 client, redis client).
+//! - Model Controllers (e.g., `ConvBmc`, `AgentBmc`) implement
+//!   CRUD and other data access methods on a given "entity"
+//!   (e.g., `Conv`, `Agent`).
+//!   (`Bmc` is short for Backend Model Controller).
+//! - In frameworks like Axum, Tauri, `ModelManager` are typically used as App State.
+//! - ModelManager are designed to be passed as an argument
+//!   to all Model Controllers functions.
+//!
 
-use crate::backend::error::Error;
-use crate::backend::ctx::Ctx;
+// region:    --- Modules
 
-// region:    --- Ticket Types
-#[derive(Clone, Debug, Serialize)]
-pub struct Ticket {
-	pub id: u64,
-	pub cid: u64, // creator user_id
-	pub title: String,
-}
+mod acs;
+mod base;
+mod error;
+mod store;
 
-#[derive(Deserialize)]
-pub struct TicketForCreate {
-	pub title: String,
-}
-// endregion: --- Ticket Types
+pub mod agent;
+pub mod conv;
+pub mod conv_msg;
+pub mod conv_user;
+pub mod modql_utils;
+pub mod user;
 
-// region: --- Model Controller
+pub use self::error::{Error, Result};
+
+use crate::backend::model::store::dbx::Dbx;
+use crate::backend::model::store::new_db_pool;
+
+// endregion: --- Modules
+
+// region:    --- ModelManager
+
+#[cfg_attr(feature = "ssr", derive(rpc_router::RpcResource))]
 #[derive(Clone)]
-pub struct ModelController {
-    tickets_store: Arc<Mutex<Vec<Option<Ticket>>>>,
+pub struct ModelManager {
+	dbx: Dbx,
 }
 
-//Contructor 
-impl ModelController {
-    pub async fn new() -> Result<Self, Error> {
-        Ok(Self {
-            tickets_store: Arc::default()
-        })
-    }
-}
-
-// CRUD Implementation
-impl ModelController {
-	pub async fn create_ticket(
-		&self,
-		ctx: Ctx,
-		ticket_fc: TicketForCreate,
-	) -> Result<Ticket, Error> {
-		let mut store = self.tickets_store.lock().unwrap();
-
-		let id = store.len() as u64;
-		let ticket = Ticket {
-			id,
-			cid: ctx.user_id(),
-			title: ticket_fc.title,
-		};
-		store.push(Some(ticket.clone()));
-
-		Ok(ticket)
+impl ModelManager {
+	/// Constructor
+	pub async fn new() -> Result<Self> {
+		let db_pool = new_db_pool()
+			.await
+			.map_err(|ex| Error::CantCreateModelManagerProvider(ex.to_string()))?;
+		let dbx = Dbx::new(db_pool, false)?;
+		Ok(ModelManager { dbx })
 	}
 
-	pub async fn list_tickets(&self, _ctx: Ctx) -> Result<Vec<Ticket>, Error> {
-		let store = self.tickets_store.lock().unwrap();
-
-		let tickets = store.iter().filter_map(|t| t.clone()).collect();
-
-		Ok(tickets)
+	pub fn new_with_txn(&self) -> Result<ModelManager> {
+		let dbx = Dbx::new(self.dbx.db().clone(), true)?;
+		Ok(ModelManager { dbx })
 	}
 
-	pub async fn delete_ticket(&self, _ctx: Ctx, id: u64) -> Result<Ticket, Error> {
-		let mut store = self.tickets_store.lock().unwrap();
-
-		let ticket = store.get_mut(id as usize).and_then(|t| t.take());
-
-		ticket.ok_or(Error::TicketDeleteFailIdNotFound { id })
+	pub fn dbx(&self) -> &Dbx {
+		&self.dbx
 	}
 }
-// endregion: --- Model Controller
+
+// endregion: --- ModelManager

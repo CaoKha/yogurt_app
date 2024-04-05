@@ -1,13 +1,17 @@
-use derive_more::From;
-use crate::backend::model;
+use serde::Serialize;
 
 pub type Result<T> = core::result::Result<T, Error>;
 
-#[derive(Debug, From)]
+#[derive(Debug, Serialize)]
 pub enum Error {
-	// -- Modules
-	#[from]
-	Model(model::Error),
+	HmacFailNewFromSlice,
+
+	InvalidFormat,
+	CannotDecodeIdent,
+	CannotDecodeExp,
+	SignatureNotMatching,
+	ExpNotIso,
+	Expired,
 }
 
 // region:    --- Error Boilerplate
