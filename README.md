@@ -112,4 +112,12 @@ if you plan to release it publicly.
 docker run --rm --name pg -p 5432:5432 \
    -e POSTGRES_PASSWORD=welcome \
    postgres:16
+
+# (optional) To have a psql terminal on pg. 
+# In another terminal (tab) run psql:
+docker exec -it -u postgres pg psql
+
+# (optional) For pg to print all sql statements.
+# In psql command line started above.
+ALTER DATABASE postgres SET log_statement = 'all';
 ```
