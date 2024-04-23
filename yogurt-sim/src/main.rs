@@ -1,113 +1,132 @@
-//! This example demonstrates Bevy's immediate mode drawing API intended for visual debugging.
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
-use std::f32::consts::{PI, TAU};
+// --- Start Constants ---
+const BALL_SIZE: f32 = 5.;
+const PADDLE_SPEED: f32 = 1.;
+const PADDLE_WIDTH: f32 = 10.;
+const PADDLE_HEIGHT: f32 = 50.;
+// --- End Constants ---
 
-use bevy::prelude::*;
+// --- General Component ---
+#[derive(Component)]
+struct Position(Vec2);
+
+#[derive(Component)]
+struct Velocity(Vec2);
+// --- End General Component ---
+
+// --- Start BallBundle ---
+#[derive(Component)]
+struct Ball;
+
+#[derive(Bundle)]
+struct BallBundle {
+    ball: Ball,
+    position: Position,
+    velocity: Velocity,
+}
+
+impl BallBundle {
+    fn new(p_x:f32, p_y:f32, v_x: f32, v_y: f32) -> Self {
+        Self {
+            ball: Ball,
+            position: Position(Vec2::new(p_x, p_y)),
+            velocity: Velocity(Vec2::new(v_x, v_y)),
+        }
+    }
+}
+// --- End BallBundle ---
+
+// --- Start PaddleBundle ---
+#[derive(Component)]
+struct Paddle;
+
+#[derive(Bundle)]
+struct PaddleBundle {
+    paddle: Paddle,
+    position: Position,
+}
+
+impl PaddleBundle {
+    fn new(x: f32, y: f32) -> Self {
+        Self {
+            paddle: Paddle,
+            position: Position(Vec2::new(x, y)),
+        }
+    }
+}
+// --- End PaddleBundle ---
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .init_gizmo_group::<MyRoundGizmos>()
-        .add_systems(Startup, setup)
-        .add_systems(Update, (draw_example_collection, update_config))
+        .add_systems(Startup, (spawn_ball, spawn_paddle, spawn_camera))
+        .add_systems(Update, (move_ball, project_positions.after(move_ball)))
         .run();
 }
 
-// We can create our own gizmo config group!
-#[derive(Default, Reflect, GizmoConfigGroup)]
-struct MyRoundGizmos {}
+// --- Start Systems ---
+fn spawn_ball(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    println!("Spawning ball ...");
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(Camera2dBundle::default());
-    // text
-    commands.spawn(TextBundle::from_section(
-        "Hold 'Left' or 'Right' to change the line width of straight gizmos\n\
-        Hold 'Up' or 'Down' to change the line width of round gizmos\n\
-        Press '1' or '2' to toggle the visibility of straight gizmos or round gizmos",
-        TextStyle {
-            font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-            font_size: 24.,
-            color: Color::WHITE,
+    let shape = Mesh::from(Circle::new(BALL_SIZE));
+    let color = ColorMaterial::from(Color::rgb(0., 1., 1.));
+    let mesh_handle = meshes.add(shape);
+    let material_handle = materials.add(color);
+
+    commands
+        .spawn((
+            BallBundle::new(-25., -25., 1., 0.),
+            MaterialMesh2dBundle {
+                mesh: mesh_handle.into(),
+                material: material_handle,
+                ..default()
+            },
+        ))
+        .insert(Transform::default());
+}
+
+fn spawn_camera(mut commands: Commands) {
+    commands.spawn_empty().insert(Camera2dBundle::default());
+}
+
+fn project_positions(mut ball: Query<(&mut Transform, &Position)>) {
+    for (mut transform, position) in &mut ball{
+        transform.translation = position.0.extend(0.);
+    }
+}
+
+fn move_ball(mut ball: Query<(&mut Position, &Velocity), With<Ball>>) {
+    println!("Moving ball ...");
+    if let Ok((mut position, velocity)) = ball.get_single_mut() {
+        position.0 += velocity.0;
+    }
+}
+
+fn spawn_paddle(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    println!("Spawning paddle ...");
+
+    let mesh = Mesh::from(Rectangle::new(PADDLE_WIDTH, PADDLE_HEIGHT));
+    let material = ColorMaterial::from(Color::rgb(0., 1., 0.));
+
+    let mesh_handle = meshes.add(mesh);
+    let material_handle = materials.add(material);
+
+    commands.spawn((
+        PaddleBundle::new(0., 0.),
+        MaterialMesh2dBundle {
+            mesh: mesh_handle.into(),
+            material: material_handle,
+            ..default()
         },
     ));
 }
-
-fn draw_example_collection(
-    mut gizmos: Gizmos,
-    mut my_gizmos: Gizmos<MyRoundGizmos>,
-    time: Res<Time>,
-) {
-    let sin = time.elapsed_seconds().sin() * 50.;
-    gizmos.line_2d(Vec2::Y * -sin, Vec2::splat(-80.), Color::RED);
-    gizmos.ray_2d(Vec2::Y * sin, Vec2::splat(80.), Color::GREEN);
-
-    // Triangle
-    gizmos.linestrip_gradient_2d([
-        (Vec2::Y * 300., Color::BLUE),
-        (Vec2::new(-255., -155.), Color::RED),
-        (Vec2::new(255., -155.), Color::GREEN),
-        (Vec2::Y * 300., Color::BLUE),
-    ]);
-
-    gizmos.rect_2d(
-        Vec2::ZERO,
-        time.elapsed_seconds() / 3.,
-        Vec2::splat(300.),
-        Color::BLACK,
-    );
-
-    // The circles have 32 line-segments by default.
-    my_gizmos.circle_2d(Vec2::ZERO, 120., Color::BLACK);
-    my_gizmos.ellipse_2d(
-        Vec2::ZERO,
-        time.elapsed_seconds() % TAU,
-        Vec2::new(100., 200.),
-        Color::YELLOW_GREEN,
-    );
-    // You may want to increase this for larger circles.
-    my_gizmos
-        .circle_2d(Vec2::ZERO, 300., Color::NAVY)
-        .segments(64);
-
-    // Arcs default amount of segments is linearly interpolated between
-    // 1 and 32, using the arc length as scalar.
-    my_gizmos.arc_2d(Vec2::ZERO, sin / 10., PI / 2., 350., Color::ORANGE_RED);
-
-    gizmos.arrow_2d(
-        Vec2::ZERO,
-        Vec2::from_angle(sin / -10. + PI / 2.) * 50.,
-        Color::YELLOW,
-    );
-}
-
-fn update_config(
-    mut config_store: ResMut<GizmoConfigStore>,
-    keyboard: Res<ButtonInput<KeyCode>>,
-    time: Res<Time>,
-) {
-    let (config, _) = config_store.config_mut::<DefaultGizmoConfigGroup>();
-    if keyboard.pressed(KeyCode::ArrowRight) {
-        config.line_width += 5. * time.delta_seconds();
-        config.line_width = config.line_width.clamp(0., 50.);
-    }
-    if keyboard.pressed(KeyCode::ArrowLeft) {
-        config.line_width -= 5. * time.delta_seconds();
-        config.line_width = config.line_width.clamp(0., 50.);
-    }
-    if keyboard.just_pressed(KeyCode::Digit1) {
-        config.enabled ^= true;
-    }
-
-    let (my_config, _) = config_store.config_mut::<MyRoundGizmos>();
-    if keyboard.pressed(KeyCode::ArrowUp) {
-        my_config.line_width += 5. * time.delta_seconds();
-        my_config.line_width = my_config.line_width.clamp(0., 50.);
-    }
-    if keyboard.pressed(KeyCode::ArrowDown) {
-        my_config.line_width -= 5. * time.delta_seconds();
-        my_config.line_width = my_config.line_width.clamp(0., 50.);
-    }
-    if keyboard.just_pressed(KeyCode::Digit2) {
-        my_config.enabled ^= true;
-    }
-}
+// --- End Systems ---
