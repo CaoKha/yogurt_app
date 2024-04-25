@@ -11,7 +11,7 @@ where
 	if MC::has_owner_id() {
 		fields.push(SeaField::new(
 			CommonIden::OwnerId.into_iden(),
-			user_id.into(),
+			user_id,
 		));
 	}
 	if MC::has_timestamps() {
@@ -35,15 +35,15 @@ fn add_timestamps_for_create(fields: &mut SeaFields, user_id: i64) {
 	let now = now_utc();
 	fields.push(SeaField::new(
 		TimestampIden::Cid.into_iden(),
-		user_id.into(),
+		user_id,
 	));
-	fields.push(SeaField::new(TimestampIden::Ctime.into_iden(), now.into()));
+	fields.push(SeaField::new(TimestampIden::Ctime.into_iden(), now));
 
 	fields.push(SeaField::new(
 		TimestampIden::Mid.into_iden(),
-		user_id.into(),
+		user_id,
 	));
-	fields.push(SeaField::new(TimestampIden::Mtime.into_iden(), now.into()));
+	fields.push(SeaField::new(TimestampIden::Mtime.into_iden(), now));
 }
 
 /// Update the timestamps info only for update.
@@ -52,7 +52,7 @@ fn add_timestamps_for_update(fields: &mut SeaFields, user_id: i64) {
 	let now = now_utc();
 	fields.push(SeaField::new(
 		TimestampIden::Mid.into_iden(),
-		user_id.into(),
+		user_id,
 	));
-	fields.push(SeaField::new(TimestampIden::Mtime.into_iden(), now.into()));
+	fields.push(SeaField::new(TimestampIden::Mtime.into_iden(), now));
 }

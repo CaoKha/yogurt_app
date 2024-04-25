@@ -208,7 +208,7 @@ impl UserBmc {
 
 		// -- Prep the data
 		let mut fields =
-			SeaFields::new(vec![SeaField::new(UserIden::Pwd, pwd.into())]);
+			SeaFields::new(vec![SeaField::new(UserIden::Pwd, pwd)]);
 		prep_fields_for_update::<Self>(&mut fields, ctx.user_id());
 
 		// -- Build query
