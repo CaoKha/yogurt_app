@@ -12,7 +12,7 @@ use ball::{move_ball, project_positions, reset_ball, spawn_ball};
 use collisions::handle_collisions;
 use constants::*;
 use gutters::spawn_gutters;
-use paddles::{handle_player_input, move_ai, move_paddles, spawn_paddles};
+use paddles::{handle_player_input, move_ai, move_paddles, move_player_ai, player_not_playing, spawn_paddles};
 use score_board::{
     detect_scoring, spawn_scoreboard, update_score, update_scoreboard, Score, Scored,
 };
@@ -38,11 +38,14 @@ fn main() {
                 move_ball,
                 handle_player_input,
                 move_ai,
+                // move_player_ai.run_if(player_not_playing),
+                move_player_ai,
                 detect_scoring,
                 reset_ball.after(detect_scoring),
                 update_score.after(detect_scoring),
                 update_scoreboard.after(detect_scoring),
-                move_paddles.after(handle_player_input),
+                // move_paddles.after(handle_player_input),
+                move_paddles,
                 project_positions.after(move_ball),
                 handle_collisions.after(move_ball),
             ),

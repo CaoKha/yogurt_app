@@ -69,7 +69,7 @@ pub fn update_score(mut score: ResMut<Score>, mut events: EventReader<Scored>) {
         }
     }
 
-    println!("Score: {} - {}", score.player, score.ai);
+    // println!("Score: {} - {}", score.player, score.ai);
 }
 
 pub fn spawn_scoreboard(mut commands: Commands) {

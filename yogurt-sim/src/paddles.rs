@@ -100,6 +100,18 @@ pub fn move_ai(
     }
 }
 
+pub fn move_player_ai(
+    mut player_ai: Query<(&mut Velocity, &Position), With<Player>>,
+    ball: Query<&Position, With<Ball>>,
+) {
+    if let Ok((mut velocity, position)) = player_ai.get_single_mut() {
+        if let Ok(ball_position) = ball.get_single() {
+            let a_to_b = ball_position.0 - position.0;
+            velocity.0.y = a_to_b.y.signum();
+        }
+    }
+}
+
 pub fn handle_player_input(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut paddle: Query<&mut Velocity, With<Player>>,
@@ -113,5 +125,11 @@ pub fn handle_player_input(
             velocity.0.y = 0.;
         }
     }
+}
+
+pub fn player_not_playing(
+    keyboard_input: Res<ButtonInput<KeyCode>>
+) -> bool {
+    !(keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::ArrowDown))
 }
 // --- End PaddleBundle ---

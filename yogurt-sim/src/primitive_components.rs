@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-
 // --- General Component ---
 #[derive(Component)]
 pub struct Position(pub Vec2);
@@ -9,8 +8,13 @@ pub struct Position(pub Vec2);
 pub struct Velocity(pub Vec2);
 
 #[derive(Component)]
+pub struct Acceleration(pub Vec2);
+
+#[derive(Component)]
 pub struct Shape(pub Vec2);
 
+#[derive(Component)]
+pub struct DeltaTime(pub f32);
 
 #[derive(Component)]
 pub struct Player;

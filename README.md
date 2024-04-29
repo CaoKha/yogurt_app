@@ -121,3 +121,13 @@ docker exec -it -u postgres pg psql
 # In psql command line started above.
 ALTER DATABASE postgres SET log_statement = 'all';
 ```
+
+
+## Compile Bevy to wasm
+```bash
+cargo build -p yogurt-sim --release --target wasm32-unknown-unknown
+wasm-bindgen --no-typescript --target web \
+    --out-dir ./yogurt-web/public/bevy/ \
+    --out-name "yogurt-sim" \
+    ./target/wasm32-unknown-unknown/release/yogurt-sim.wasm
+```
