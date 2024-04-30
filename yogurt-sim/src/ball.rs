@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 use crate::{
-    primitive_components::{Acceleration, DeltaTime, Position, Shape, Velocity},
+    primitive_components::{Acceleration, Position, Shape, Velocity},
     score_board::{Scored, Scorer},
     BALL_ACCEL, BALL_INITIAL_SPEED, BALL_RADIUS, GUTTER_HEIGHT,
 };
@@ -17,7 +17,6 @@ pub struct BallBundle {
     velocity: Velocity,
     shape: Shape,
     accel: Acceleration,
-    delta_time: DeltaTime,
 }
 
 impl BallBundle {
@@ -27,8 +26,7 @@ impl BallBundle {
             position: Position(Vec2::new(p_x, p_y)),
             velocity: Velocity(Vec2::new(BALL_INITIAL_SPEED, BALL_INITIAL_SPEED)),
             shape: Shape(Vec2::splat(BALL_RADIUS)),
-            delta_time: DeltaTime(0.),
-            accel: Acceleration(Vec2::splat(BALL_ACCEL)),
+            accel: Acceleration(BALL_ACCEL),
         }
     }
 }
@@ -64,17 +62,19 @@ pub fn project_positions(mut ball: Query<(&mut Transform, &Position)>) {
 
 pub fn move_ball(
     time: Res<Time>,
-    mut ball: Query<(&mut Position, &mut Velocity, &mut DeltaTime, &Acceleration), With<Ball>>,
+    mut ball: Query<(&mut Position, &mut Velocity, &Acceleration), With<Ball>>,
     window: Query<&Window>,
 ) {
     if let Ok(window) = window.get_single() {
         let window_height = window.resolution.height();
         let max_y = window_height / 2. - GUTTER_HEIGHT - BALL_RADIUS;
-        if let Ok((mut position, mut velocity, mut delta_time, accel)) = ball.get_single_mut() {
-            delta_time.0 = 0.5 + time.delta_seconds();
-            velocity.0 += accel.0 * delta_time.0;
+        if let Ok((mut position, mut velocity, accel)) = ball.get_single_mut() {
+            let time_offset = 1.;
+            let delta_time = time_offset + time.delta_seconds();
+            let new_velocity = velocity.0 + accel.0 * delta_time;
             let new_position =
-                position.0 + velocity.0 * delta_time.0 - (1. / 2.) * accel.0 * delta_time.0.powi(2);
+                position.0 + velocity.0 * delta_time;
+            velocity.0 = new_velocity;
             if new_position.y <= max_y {
                 position.0 = new_position;
             } else {
@@ -93,27 +93,21 @@ pub fn reset_ball(
         (
             &mut Position,
             &mut Velocity,
-            &mut DeltaTime,
-            &mut Acceleration,
         ),
         With<Ball>,
     >,
     mut events: EventReader<Scored>,
 ) {
     for event in events.read() {
-        if let Ok((mut position, mut velocity, mut delta_time, mut accel)) = ball.get_single_mut() {
+        if let Ok((mut position, mut velocity)) = ball.get_single_mut() {
             match event.0 {
                 Scorer::Player => {
                     position.0 = Vec2::new(0., 0.);
-                    velocity.0 = Vec2::new(BALL_INITIAL_SPEED, BALL_INITIAL_SPEED);
-                    delta_time.0 = 0.;
-                    accel.0 = Vec2::new(-BALL_ACCEL, -BALL_ACCEL);
+                    velocity.0 = Vec2::new(-BALL_INITIAL_SPEED, BALL_INITIAL_SPEED);
                 }
                 Scorer::AI => {
                     position.0 = Vec2::new(0., 0.);
-                    velocity.0 = Vec2::new(BALL_INITIAL_SPEED, BALL_INITIAL_SPEED);
-                    delta_time.0 = 0.;
-                    accel.0 = Vec2::new(BALL_ACCEL, BALL_ACCEL);
+                    velocity.0 = Vec2::new(BALL_INITIAL_SPEED, -BALL_INITIAL_SPEED);
                 }
             }
         }

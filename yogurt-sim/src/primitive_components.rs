@@ -8,13 +8,10 @@ pub struct Position(pub Vec2);
 pub struct Velocity(pub Vec2);
 
 #[derive(Component)]
-pub struct Acceleration(pub Vec2);
+pub struct Acceleration(pub f32);
 
 #[derive(Component)]
 pub struct Shape(pub Vec2);
-
-#[derive(Component)]
-pub struct DeltaTime(pub f32);
 
 #[derive(Component)]
 pub struct Player;

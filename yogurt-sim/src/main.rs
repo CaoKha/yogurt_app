@@ -19,7 +19,13 @@ use score_board::{
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin{
+            primary_window: Some(Window {
+                resolution: (480., 360.).into(),
+                ..default()
+            }),
+            ..default()
+        }))
         .init_resource::<Score>()
         .add_event::<Scored>()
         .add_systems(
@@ -38,14 +44,14 @@ fn main() {
                 move_ball,
                 handle_player_input,
                 move_ai,
-                // move_player_ai.run_if(player_not_playing),
-                move_player_ai,
+                move_player_ai.run_if(player_not_playing),
+                // move_player_ai,
                 detect_scoring,
                 reset_ball.after(detect_scoring),
                 update_score.after(detect_scoring),
                 update_scoreboard.after(detect_scoring),
-                // move_paddles.after(handle_player_input),
-                move_paddles,
+                move_paddles.after(handle_player_input),
+                // move_paddles,
                 project_positions.after(move_ball),
                 handle_collisions.after(move_ball),
             ),

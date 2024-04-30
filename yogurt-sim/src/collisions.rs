@@ -24,7 +24,7 @@ pub fn handle_collisions(
             &Position,
             &mut Velocity,
             &Shape,
-            &mut Acceleration,
+            &mut Acceleration
         ),
         With<Ball>,
     >,
@@ -41,26 +41,24 @@ pub fn handle_collisions(
                 match collision {
                     Collision::Left => {
                         if ball_velocity.0.x < 0. {
-                            ball_velocity.0.x /= -2.;
-                            ball_accel.0.x *= -1.;
+                            ball_velocity.0.x *= -1.;
+                            ball_accel.0 *= -1.;
                         }
                     }
                     Collision::Right => {
                         if ball_velocity.0.x > 0. {
-                            ball_velocity.0.x /= -2.;
-                            ball_accel.0.x *= -1.;
+                            ball_velocity.0.x *= -1.;
+                            ball_accel.0 *= -1.;
                         }
                     }
                     Collision::Top => {
                         if ball_velocity.0.y > 0. {
-                            ball_velocity.0.y /= -2.;
-                            ball_accel.0.y *= -1.;
+                            ball_velocity.0.y *= -1.;
                         }
                     }
                     Collision::Bottom => {
                         if ball_velocity.0.y < 0. {
-                            ball_velocity.0.y /= -2.;
-                            ball_accel.0.y *= -1.;
+                            ball_velocity.0.y *= -1.;
                         }
                     }
                 }
