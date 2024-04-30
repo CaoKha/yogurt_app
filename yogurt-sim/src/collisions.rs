@@ -74,7 +74,7 @@ fn collide_with_side(bound_circle: BoundingCircle, wall: Aabb2d) -> Option<Colli
     }
     let closest_point_of_wall = wall.closest_point(bound_circle.center());
     let offset = closest_point_of_wall - bound_circle.center();
-    println!("offset = {}", offset);
+    // println!("offset = {}", offset);
 
     let side = if offset.x.abs() > offset.y.abs() {
         if offset.x < 0. {

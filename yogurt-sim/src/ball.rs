@@ -69,8 +69,7 @@ pub fn move_ball(
         let window_height = window.resolution.height();
         let max_y = window_height / 2. - GUTTER_HEIGHT - BALL_RADIUS;
         if let Ok((mut position, mut velocity, accel)) = ball.get_single_mut() {
-            let time_offset = 1.;
-            let delta_time = time_offset + time.delta_seconds();
+            let delta_time = time.delta_seconds();
             let new_velocity = velocity.0 + accel.0 * delta_time;
             let new_position =
                 position.0 + velocity.0 * delta_time;
@@ -80,10 +79,10 @@ pub fn move_ball(
             } else {
                 position.0 = Vec2::new(new_position.x, max_y);
             }
-            println!(
-                "position_y = {}, max_y = {}, velocity = {}",
-                position.0.y, max_y, velocity.0
-            );
+            // println!(
+            //     "position_y = {}, max_y = {}, velocity = {}",
+            //     position.0.y, max_y, velocity.0
+            // );
         }
     }
 }
@@ -93,21 +92,24 @@ pub fn reset_ball(
         (
             &mut Position,
             &mut Velocity,
+            &mut Acceleration,
         ),
         With<Ball>,
     >,
     mut events: EventReader<Scored>,
 ) {
     for event in events.read() {
-        if let Ok((mut position, mut velocity)) = ball.get_single_mut() {
+        if let Ok((mut position, mut velocity, mut accel)) = ball.get_single_mut() {
             match event.0 {
                 Scorer::Player => {
                     position.0 = Vec2::new(0., 0.);
                     velocity.0 = Vec2::new(-BALL_INITIAL_SPEED, BALL_INITIAL_SPEED);
+                    accel.0 = -BALL_ACCEL;
                 }
                 Scorer::AI => {
                     position.0 = Vec2::new(0., 0.);
                     velocity.0 = Vec2::new(BALL_INITIAL_SPEED, -BALL_INITIAL_SPEED);
+                    accel.0 = BALL_ACCEL;
                 }
             }
         }
