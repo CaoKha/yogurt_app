@@ -77,7 +77,7 @@ pub fn spawn_scoreboard(mut commands: Commands) {
         TextBundle::from_section(
             "0",
             TextStyle {
-                font_size: 40.0,
+                font_size: 36.0,
                 color: Color::WHITE,
                 ..default()
             },
@@ -86,7 +86,7 @@ pub fn spawn_scoreboard(mut commands: Commands) {
         .with_style(Style {
             position_type: PositionType::Absolute,
             top: Val::Px(5.0),
-            left: Val::Px(15.0),
+            left: Val::Px(40.0),
             ..default()
         }),
         PlayerScore,
@@ -96,7 +96,7 @@ pub fn spawn_scoreboard(mut commands: Commands) {
         TextBundle::from_section(
             "0",
             TextStyle {
-                font_size: 40.0,
+                font_size: 36.0,
                 color: Color::WHITE,
                 ..default()
             },
@@ -105,7 +105,7 @@ pub fn spawn_scoreboard(mut commands: Commands) {
         .with_style(Style {
             position_type: PositionType::Absolute,
             top: Val::Px(5.0),
-            right: Val::Px(15.0),
+            right: Val::Px(40.0),
             ..default()
         }),
         AiScore,

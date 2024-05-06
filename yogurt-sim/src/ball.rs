@@ -1,9 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 use crate::{
-    primitive_components::{Acceleration, Position, Shape, Velocity},
-    score_board::{Scored, Scorer},
-    BALL_ACCEL, BALL_INITIAL_SPEED, BALL_RADIUS, GUTTER_HEIGHT,
+    primitive_components::{Acceleration, Position, PreviousPosition, Shape, Velocity}, score_board::{Scored, Scorer}, BALL_ACCEL, BALL_INITIAL_SPEED, BALL_RADIUS, GUTTER_HEIGHT, VELOCITY_THRESHOLD
 };
 
 // --- Start BallBundle ---
@@ -14,6 +12,7 @@ pub struct Ball;
 pub struct BallBundle {
     ball: Ball,
     position: Position,
+    previous_position: PreviousPosition,
     velocity: Velocity,
     shape: Shape,
     accel: Acceleration,
@@ -24,6 +23,7 @@ impl BallBundle {
         Self {
             ball: Ball,
             position: Position(Vec2::new(p_x, p_y)),
+            previous_position: PreviousPosition(Vec2::new(0., 0.)),
             velocity: Velocity(Vec2::new(BALL_INITIAL_SPEED, BALL_INITIAL_SPEED)),
             shape: Shape(Vec2::splat(BALL_RADIUS)),
             accel: Acceleration(BALL_ACCEL),
@@ -62,18 +62,22 @@ pub fn project_positions(mut ball: Query<(&mut Transform, &Position)>) {
 
 pub fn move_ball(
     time: Res<Time>,
-    mut ball: Query<(&mut Position, &mut Velocity, &Acceleration), With<Ball>>,
+    mut ball: Query<(&mut Position, &mut PreviousPosition, &mut Velocity, &Acceleration), With<Ball>>,
     window: Query<&Window>,
 ) {
     if let Ok(window) = window.get_single() {
         let window_height = window.resolution.height();
         let max_y = window_height / 2. - GUTTER_HEIGHT - BALL_RADIUS;
-        if let Ok((mut position, mut velocity, accel)) = ball.get_single_mut() {
+        if let Ok((mut position, mut previous_position, mut velocity, accel)) = ball.get_single_mut() {
             let delta_time = time.delta_seconds();
-            let new_velocity = velocity.0 + accel.0 * delta_time;
+            let new_velocity = if velocity.0.x.abs() < VELOCITY_THRESHOLD {
+                velocity.0 + accel.0 * delta_time } else {
+                    velocity.0 
+                };
             let new_position =
                 position.0 + velocity.0 * delta_time;
             velocity.0 = new_velocity;
+            previous_position.0 = position.0;
             if new_position.y <= max_y {
                 position.0 = new_position;
             } else {

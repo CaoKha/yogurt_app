@@ -22,6 +22,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin{
             primary_window: Some(Window {
                 resolution: (480., 360.).into(),
+                // prevent_default_event_handling: true,
                 ..default()
             }),
             ..default()
@@ -42,16 +43,16 @@ fn main() {
             Update,
             (
                 move_ball,
-                handle_player_input,
+                // handle_player_input,
                 move_ai,
-                move_player_ai.run_if(player_not_playing),
-                // move_player_ai,
+                // move_player_ai.run_if(player_not_playing),
+                move_paddles,
+                move_player_ai,
                 detect_scoring,
                 reset_ball.after(detect_scoring),
                 update_score.after(detect_scoring),
                 update_scoreboard.after(detect_scoring),
-                move_paddles.after(handle_player_input),
-                // move_paddles,
+                // move_paddles.after(handle_player_input),
                 project_positions.after(move_ball),
                 handle_collisions.after(move_ball),
             ),
