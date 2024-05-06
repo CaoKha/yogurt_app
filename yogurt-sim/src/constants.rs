@@ -6,5 +6,6 @@ pub const PADDLE_SPEED: f32 = 10.;
 pub const PADDLE_WIDTH: f32 = 10.;
 pub const PADDLE_HEIGHT: f32 = 30.;
 pub const GUTTER_HEIGHT: f32 = 50.;
+pub const DELTA_TIME: f32 = 1. / 60.;
 pub const VELOCITY_THRESHOLD: f32 = 1000.;
 // --- End Constants ---

@@ -1,7 +1,7 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
 use crate::{
-    primitive_components::{Acceleration, Position, PreviousPosition, Shape, Velocity}, score_board::{Scored, Scorer}, BALL_ACCEL, BALL_INITIAL_SPEED, BALL_RADIUS, GUTTER_HEIGHT, VELOCITY_THRESHOLD
+    primitive_components::{Acceleration, Position, PreviousPosition, Shape, Velocity}, score_board::{Scored, Scorer}, BALL_ACCEL, BALL_INITIAL_SPEED, BALL_RADIUS, DELTA_TIME, GUTTER_HEIGHT, VELOCITY_THRESHOLD
 };
 
 // --- Start BallBundle ---
@@ -69,7 +69,7 @@ pub fn move_ball(
         let window_height = window.resolution.height();
         let max_y = window_height / 2. - GUTTER_HEIGHT - BALL_RADIUS;
         if let Ok((mut position, mut previous_position, mut velocity, accel)) = ball.get_single_mut() {
-            let delta_time = time.delta_seconds();
+            let delta_time = DELTA_TIME;
             let new_velocity = if velocity.0.x.abs() < VELOCITY_THRESHOLD {
                 velocity.0 + accel.0 * delta_time } else {
                     velocity.0 
